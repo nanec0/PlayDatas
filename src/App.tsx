@@ -4,15 +4,18 @@ import DataEntryPanel from './components/DataEntryPanel';
 import RealTimeTable from './components/RealTimeTable';
 import ExportButtons from './components/ExportButtons';
 import StatisticsChart from './components/StatisticsChart';
-import PlayerManagement from './components/PlayerManagement';
-import { Play } from './types';
+import TeamManagement from './components/TeamManagement';
+import PreMatchConfig from './components/PreMatchConfig';
+import { Play, Team } from './types';
 
 function App() {
   const [plays, setPlays] = useState<Play[]>([]);
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
-  const [currentPage, setCurrentPage] = useState<'stats' | 'players'>('stats');
-  const [activeTeam, setActiveTeam] = useState<'home' | 'away'>('home');
+  const [currentPage, setCurrentPage] = useState<'teams' | 'prematch' | 'match'>('teams');
+  const [activeTeam, setActiveTeam] = useState<Team | null>(null);
+  const [homeTeam, setHomeTeam] = useState<Team | null>(null);
+  const [awayTeam, setAwayTeam] = useState<Team | null>(null);
   const [homeColor, setHomeColor] = useState<string>('#8884d8');
   const [awayColor, setAwayColor] = useState<string>('#82ca9d');
 
@@ -26,7 +29,19 @@ function App() {
   }, []);
 
   const addPlay = (play: Play) => {
-    setPlays([...plays, { ...play, team: activeTeam }]);
+    setPlays([...plays, play]);
+  };
+
+  const switchTeam = () => {
+    setActiveTeam(activeTeam === homeTeam ? awayTeam : homeTeam);
+    setSelectedZone(null);
+  };
+
+  const handleMatchStart = (home: Team, away: Team) => {
+    setHomeTeam(home);
+    setAwayTeam(away);
+    setActiveTeam(home);
+    setCurrentPage('match');
   };
 
   return (
@@ -34,34 +49,29 @@ function App() {
       <h1 className="text-3xl font-bold mb-4 text-center">Football Statistics Tracker</h1>
       <div className="mb-4 flex justify-center space-x-4">
         <button
-          onClick={() => setCurrentPage('stats')}
-          className={`p-2 rounded ${currentPage === 'stats' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          onClick={() => setCurrentPage('teams')}
+          className={`p-2 rounded ${currentPage === 'teams' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
         >
-          Statistics
+          Manage Teams
         </button>
         <button
-          onClick={() => setCurrentPage('players')}
-          className={`p-2 rounded ${currentPage === 'players' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          onClick={() => setCurrentPage('prematch')}
+          className={`p-2 rounded ${currentPage === 'prematch' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
         >
-          Manage Players
+          Pre-Match Setup
+        </button>
+        <button
+          onClick={() => setCurrentPage('match')}
+          className={`p-2 rounded ${currentPage === 'match' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          disabled={!homeTeam || !awayTeam}
+        >
+          Match
         </button>
       </div>
-      {currentPage === 'stats' ? (
+      {currentPage === 'teams' && <TeamManagement />}
+      {currentPage === 'prematch' && <PreMatchConfig onMatchStart={handleMatchStart} />}
+      {currentPage === 'match' && homeTeam && awayTeam && activeTeam && (
         <div>
-          <div className="mb-4 flex justify-center space-x-4">
-            <button
-              onClick={() => setActiveTeam('home')}
-              className={`p-2 rounded ${activeTeam === 'home' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Home Team
-            </button>
-            <button
-              onClick={() => setActiveTeam('away')}
-              className={`p-2 rounded ${activeTeam === 'away' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Away Team
-            </button>
-          </div>
           <div className="mb-4 flex justify-center space-x-4">
             <div>
               <label htmlFor="homeColor" className="mr-2">Home Team Color:</label>
@@ -84,22 +94,28 @@ function App() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              {isMobile ? (
-                <DataEntryPanel addPlay={addPlay} selectedZone={selectedZone} setSelectedZone={setSelectedZone} isMobile={isMobile} activeTeam={activeTeam} teamColor={activeTeam === 'home' ? homeColor : awayColor} />
-              ) : (
-                <InteractiveMap selectedZone={selectedZone} setSelectedZone={setSelectedZone} />
-              )}
+              <InteractiveMap
+                selectedZone={selectedZone}
+                setSelectedZone={setSelectedZone}
+                activeTeam={activeTeam === homeTeam ? 'home' : 'away'}
+              />
             </div>
             <div>
-              <DataEntryPanel addPlay={addPlay} selectedZone={selectedZone} setSelectedZone={setSelectedZone} isMobile={isMobile} activeTeam={activeTeam} teamColor={activeTeam === 'home' ? homeColor : awayColor} />
+              <DataEntryPanel
+                addPlay={addPlay}
+                selectedZone={selectedZone}
+                setSelectedZone={setSelectedZone}
+                isMobile={isMobile}
+                activeTeam={activeTeam}
+                teamColor={activeTeam === homeTeam ? homeColor : awayColor}
+                onTeamSwitch={switchTeam}
+              />
               <RealTimeTable plays={plays} homeColor={homeColor} awayColor={awayColor} />
               <ExportButtons plays={plays} />
               <StatisticsChart plays={plays} homeColor={homeColor} awayColor={awayColor} />
             </div>
           </div>
         </div>
-      ) : (
-        <PlayerManagement />
       )}
     </div>
   );
