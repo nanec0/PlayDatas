@@ -1,45 +1,68 @@
 import React, { useState, useEffect } from 'react';
-import { Play } from '../types';
+import { Play, Team, Player } from '../types';
 
 interface DataEntryPanelProps {
   addPlay: (play: Play) => void;
   selectedZone: string | null;
   setSelectedZone: (zone: string) => void;
   isMobile: boolean;
-  activeTeam: 'home' | 'away';
+  activeTeam: Team;
   teamColor: string;
+  onTeamSwitch: () => void;
 }
 
-interface Player {
-  id: number;
-  name: string;
-}
-
-const DataEntryPanel: React.FC<DataEntryPanelProps> = ({ addPlay, selectedZone, setSelectedZone, isMobile, activeTeam, teamColor }) => {
+const DataEntryPanel: React.FC<DataEntryPanelProps> = ({
+  addPlay,
+  selectedZone,
+  setSelectedZone,
+  isMobile,
+  activeTeam,
+  teamColor,
+  onTeamSwitch,
+}) => {
   const [chico, setChico] = useState('');
   const [jugador, setJugador] = useState('');
   const [tipoDeJuego, setTipoDeJuego] = useState<'abierto' | 'parado'>('abierto');
   const [resultado, setResultado] = useState<'gol' | 'atajado' | 'desviado' | 'bloqueado'>('gol');
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
-    const storedPlayers = localStorage.getItem('players');
-    if (storedPlayers) {
-      setPlayers(JSON.parse(storedPlayers));
+    if (selectedZone) {
+      const zoneNumber = parseInt(selectedZone);
+      const isDefensiveZone = zoneNumber <= 3;
+      const isOffensiveZone = zoneNumber >= 10;
+      setShowWarning(isDefensiveZone || isOffensiveZone);
+    } else {
+      setShowWarning(false);
     }
-  }, []);
+  }, [selectedZone]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedZone) {
-      addPlay({ team: activeTeam, chico, jugador, tipoDeJuego, resultado, zona: selectedZone });
-      setJugador('');
+      addPlay({ team: activeTeam.id, chico, jugador, tipoDeJuego, resultado, zona: selectedZone });
+      resetForm();
     }
+  };
+
+  const resetForm = () => {
+    setChico('');
+    setJugador('');
+    setTipoDeJuego('abierto');
+    setResultado('gol');
+    setSelectedZone('');
+    setShowWarning(false);
   };
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-4 rounded shadow" style={{ backgroundColor: `${teamColor}20` }}>
-      <h2 className="text-xl font-bold mb-4">Data Entry - {activeTeam === 'home' ? 'Home' : 'Away'} Team</h2>
+      <h2 className="text-xl font-bold mb-4">Data Entry - {activeTeam.name}</h2>
+      {showWarning && (
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
+          <p className="font-bold">Warning</p>
+          <p>You've selected a {parseInt(selectedZone!) <= 3 ? 'defensive' : 'offensive'} zone. Please confirm this is correct.</p>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-4">
         <div>
           <label htmlFor="chico" className="block mb-1">Chico</label>
@@ -67,8 +90,8 @@ const DataEntryPanel: React.FC<DataEntryPanelProps> = ({ addPlay, selectedZone, 
             required
           >
             <option value="">Select Player</option>
-            {players.map(player => (
-              <option key={player.id} value={player.name}>{player.name}</option>
+            {activeTeam.players.map((player: Player) => (
+              <option key={player.id} value={player.name}>{player.name} (#{player.number})</option>
             ))}
           </select>
         </div>
@@ -127,9 +150,17 @@ const DataEntryPanel: React.FC<DataEntryPanelProps> = ({ addPlay, selectedZone, 
             readOnly
           />
         </div>
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-          Add Play
-        </button>
+        <div className="flex space-x-2">
+          <button type="submit" className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 flex-grow">
+            Add Play
+          </button>
+          <button type="button" onClick={resetForm} className="bg-gray-300 text-gray-700 p-2 rounded hover:bg-gray-400">
+            Clear
+          </button>
+          <button type="button" onClick={onTeamSwitch} className="bg-green-500 text-white p-2 rounded hover:bg-green-600">
+            Switch Team
+          </button>
+        </div>
       </div>
     </form>
   );
