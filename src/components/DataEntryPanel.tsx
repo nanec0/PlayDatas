@@ -24,6 +24,7 @@ const DataEntryPanel: React.FC<DataEntryPanelProps> = ({
   const [jugador, setJugador] = useState('');
   const [tipoDeJuego, setTipoDeJuego] = useState<'abierto' | 'parado'>('abierto');
   const [resultado, setResultado] = useState<'gol' | 'atajado' | 'desviado' | 'bloqueado'>('gol');
+  const [minutes, setMinutes] = useState<number | ''>('');
   const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
@@ -39,8 +40,8 @@ const DataEntryPanel: React.FC<DataEntryPanelProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedZone) {
-      addPlay({ team: activeTeam.id, chico, jugador, tipoDeJuego, resultado, zona: selectedZone });
+    if (selectedZone && minutes !== '') {
+      addPlay({ team: activeTeam.id, chico, jugador, tipoDeJuego, resultado, zona: selectedZone, minutes });
       resetForm();
     }
   };
@@ -52,6 +53,7 @@ const DataEntryPanel: React.FC<DataEntryPanelProps> = ({
     setResultado('gol');
     setSelectedZone('');
     setShowWarning(false);
+    setMinutes('');
   };
 
   return (
@@ -122,6 +124,17 @@ const DataEntryPanel: React.FC<DataEntryPanelProps> = ({
             <option value="desviado">Desviado</option>
             <option value="bloqueado">Bloqueado</option>
           </select>
+        </div>
+        <div>
+          <label htmlFor="minutes" className="block mb-1">Minute of the Game</label>
+          <input
+            type="number"
+            id="minutes"
+            value={minutes}
+            onChange={(e) => setMinutes(parseInt(e.target.value))}
+            className="w-full p-2 border rounded"
+            required
+          />
         </div>
         {isMobile && (
           <div>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { usePDF } from 'react-to-pdf';
-import * as XLSX from 'xlsx';
 import { Play } from '../types';
 
 interface ExportButtonsProps {
@@ -10,13 +9,6 @@ interface ExportButtonsProps {
 const ExportButtons: React.FC<ExportButtonsProps> = ({ plays }) => {
   const { toPDF, targetRef } = usePDF({ filename: 'football_stats.pdf' });
 
-  const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(plays);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Plays');
-    XLSX.writeFile(workbook, 'football_stats.xlsx');
-  };
-
   return (
     <div className="mt-4 flex space-x-4">
       <button
@@ -24,12 +16,6 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ plays }) => {
         className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
       >
         Export to PDF
-      </button>
-      <button
-        onClick={exportToExcel}
-        className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
-      >
-        Export to Excel
       </button>
       <div style={{ display: 'none' }}>
         <div ref={targetRef}>

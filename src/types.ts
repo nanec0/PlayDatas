@@ -1,18 +1,4 @@
-export interface Play {
-  team: 'home' | 'away';
-  chico: string;
-  jugador: string;
-  tipoDeJuego: 'abierto' | 'parado';
-  resultado: 'gol' | 'atajado' | 'desviado' | 'bloqueado';
-  zona: string;
-}
-
-export interface Player {
-  id: string;
-  name: string;
-  number: string;
-  position: string;
-}
+// types.ts
 
 export interface Team {
   id: string;
@@ -20,10 +6,34 @@ export interface Team {
   players: Player[];
 }
 
+export interface Player {
+  id: string;
+  name: string;
+  number: string;
+  position?: string;
+  teamId: string;
+}
+
+export interface Tournament {
+  id: string;
+  name: string;
+  matches?: Match[];
+}
+
 export interface Match {
   id: string;
-  date: string;
-  homeTeam: Team;
-  awayTeam: Team;
+  homeTeamId: string;
+  awayTeamId: string;
+  tournamentId: string;
+  date: Date;
   plays: Play[];
+}
+
+export interface Play {
+  team: string;
+  chico: string;
+  jugador: string;
+  tipoDeJuego: 'abierto' | 'parado';
+  resultado: 'gol' | 'atajado' | 'desviado' | 'bloqueado';
+  zona: string;
 }

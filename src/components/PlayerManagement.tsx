@@ -1,40 +1,42 @@
 import React, { useState, useEffect } from 'react';
+import { createPlayer, getPlayersByTeamId, deletePlayer } from '../db/operations/playerOperations';
+import { Player } from '../types';
 
-interface Player {
-  id: number;
-  name: string;
+interface PlayerManagementProps {
+  currentTeamId: string;
 }
 
-const PlayerManagement: React.FC = () => {
+const PlayerManagement: React.FC<PlayerManagementProps> = ({ currentTeamId }) => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [newPlayerName, setNewPlayerName] = useState('');
+  const [newPlayerNumber, setNewPlayerNumber] = useState('');
+  const [newPlayerPosition, setNewPlayerPosition] = useState('');
 
   useEffect(() => {
-    // Load players from localStorage on component mount
-    const storedPlayers = localStorage.getItem('players');
-    if (storedPlayers) {
-      setPlayers(JSON.parse(storedPlayers));
+    const fetchPlayers = async () => {
+      const teamPlayers = await getPlayersByTeamId(currentTeamId);
+      setPlayers(teamPlayers);
+    };
+    if (currentTeamId) {
+      fetchPlayers();
     }
-  }, []);
+  }, [currentTeamId]);
 
-  useEffect(() => {
-    // Save players to localStorage whenever the players array changes
-    localStorage.setItem('players', JSON.stringify(players));
-  }, [players]);
-
-  const addPlayer = () => {
-    if (newPlayerName.trim()) {
-      const newPlayer: Player = {
-        id: Date.now(),
-        name: newPlayerName.trim()
-      };
-      setPlayers([...players, newPlayer]);
-      setNewPlayerName('');
+  const addPlayer = async () => {
+    if (newPlayerName.trim() && newPlayerNumber.trim()) {
+      const newPlayer = await createPlayer(newPlayerName.trim(), newPlayerNumber.trim(), newPlayerPosition.trim(), currentTeamId);
+      if (newPlayer) {
+        setPlayers([...players, newPlayer]);
+        setNewPlayerName('');
+        setNewPlayerNumber('');
+        setNewPlayerPosition('');
+      }
     }
   };
 
-  const removePlayer = (id: number) => {
-    setPlayers(players.filter(player => player.id !== id));
+  const handleDeletePlayer = async (playerId: string) => {
+    await deletePlayer(playerId);
+    setPlayers(players.filter((player) => player.id !== playerId));
   };
 
   return (
@@ -48,19 +50,33 @@ const PlayerManagement: React.FC = () => {
           className="p-2 border rounded mr-2"
           placeholder="Enter player name"
         />
+        <input
+          type="text"
+          value={newPlayerNumber}
+          onChange={(e) => setNewPlayerNumber(e.target.value)}
+          className="p-2 border rounded mr-2"
+          placeholder="Enter player number"
+        />
+        <input
+          type="text"
+          value={newPlayerPosition}
+          onChange={(e) => setNewPlayerPosition(e.target.value)}
+          className="p-2 border rounded mr-2"
+          placeholder="Enter player position"
+        />
         <button
           onClick={addPlayer}
-          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
         >
           Add Player
         </button>
       </div>
       <ul>
-        {players.map(player => (
+        {players.map((player) => (
           <li key={player.id} className="flex justify-between items-center mb-2">
-            {player.name}
+            {player.name} (#{player.number}) - {player.position}
             <button
-              onClick={() => removePlayer(player.id)}
+              onClick={() => handleDeletePlayer(player.id)}
               className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
             >
               Remove
